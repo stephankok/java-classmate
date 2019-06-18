@@ -6,6 +6,8 @@ import com.fasterxml.classmate.types.*;
 import com.fasterxml.classmate.util.*;
 
 public class TestRunner {
+	private final static int AMOUNTOFTESTS = 226;
+	
 	public static void main(String[] args) 
 	{
 //		Check arguments
@@ -37,7 +39,7 @@ public class TestRunner {
 	public static void runTests(int repeats) {
 		for (int i = 0; i < repeats; i++) {
 			Result result = runtests();
-			if (!result.wasSuccessful() || result.getRunCount() != 226) {
+			if (!result.wasSuccessful() || result.getRunCount() != AMOUNTOFTESTS) {
 				printResult(result, i);
 				System.exit(3);
 			}
@@ -45,14 +47,20 @@ public class TestRunner {
 	}
 	
 	private static void printResult(Result result, int run) {
-		System.out.println("Failed to run tests all 226 tests succesfull");
+		System.out.println("Failed to run tests all " + AMOUNTOFTESTS + " tests succesfull");
 		System.out.println("Run: " + run);
 		System.out.println("Fails: " + result.getFailureCount());
 		System.out.println("Runtime: " + result.getRunTime());
 		System.out.println("RunCount: " + result.getRunCount());
 		System.out.println("IgnoreCount: " + result.getIgnoreCount() + "\n");
 		System.out.print("Failed runs: ");
-		System.out.println(result.getFailures());
+		for (int i = 0; i < result.getFailures().size(); i++) {			
+			System.out.println("    " + result.getFailures().get(i));			
+			System.out.println("    " + result.getFailures().get(i).getMessage());
+			System.out.println("    " + result.getFailures().get(i).getTrace());
+			System.out.println("    " + result.getFailures().get(i).getTestHeader());
+			System.out.println("    ");
+		}
 	}
 	
 	private static Result runtests() {
