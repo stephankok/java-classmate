@@ -627,12 +627,12 @@ public class ResolvedTypeWithMembers
      */
     private final static class AnnotationHandler
     {
-        private final AnnotationConfiguration _annotationConfig;
+        private AnnotationHandlerProduct methodInclusions = new AnnotationHandlerProduct();
+        private AnnotationHandlerProduct fieldInclusion = new AnnotationHandlerProduct();
+        private AnnotationHandlerProduct constructorInclusion = new AnnotationHandlerProduct();
+        private AnnotationHandlerProduct parameterInclusion = new AnnotationHandlerProduct();
 
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _fieldInclusions;
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _constructorInclusions;
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _methodInclusions;
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _parameterInclusions;
+		private final AnnotationConfiguration _annotationConfig;
 
         public AnnotationHandler(AnnotationConfiguration annotationConfig) {
             _annotationConfig = annotationConfig;
@@ -640,76 +640,33 @@ public class ResolvedTypeWithMembers
 
         public boolean includeConstructorAnnotation(Annotation ann)
         {
-            Class<? extends Annotation> annType = ann.annotationType();
-            if (_constructorInclusions == null) {
-                _constructorInclusions = new HashMap<Class<? extends Annotation>, AnnotationInclusion>();
-            } else {
-                AnnotationInclusion incl = _constructorInclusions.get(annType);
-                if (incl != null) {
-                    return (incl != AnnotationInclusion.DONT_INCLUDE);
-                }
-            }
-            AnnotationInclusion incl = _annotationConfig.getInclusionForConstructor(annType);
-            _constructorInclusions.put(annType, incl);
-            return (incl != AnnotationInclusion.DONT_INCLUDE);
+        	return constructorInclusion.includeProductAnnotation(ann, this._annotationConfig);
         }
         
         public boolean includeFieldAnnotation(Annotation ann)
         {
-            Class<? extends Annotation> annType = ann.annotationType();
-            if (_fieldInclusions == null) {
-                _fieldInclusions = new HashMap<Class<? extends Annotation>, AnnotationInclusion>();
-            } else {
-                AnnotationInclusion incl = _fieldInclusions.get(annType);
-                if (incl != null) {
-                    return (incl != AnnotationInclusion.DONT_INCLUDE);
-                }
-            }
-            AnnotationInclusion incl = _annotationConfig.getInclusionForField(annType);
-            _fieldInclusions.put(annType, incl);
-            return (incl != AnnotationInclusion.DONT_INCLUDE);
+        	return fieldInclusion.includeProductAnnotation(ann, this._annotationConfig);
         }
 
         public boolean includeMethodAnnotation(Annotation ann)
         {
-            return methodInclusion(ann) != AnnotationInclusion.DONT_INCLUDE;
-        }
-
-        public AnnotationInclusion methodInclusion(Annotation ann)
-        {
-            Class<? extends Annotation> annType = ann.annotationType();
-            if (_methodInclusions == null) {
-                _methodInclusions = new HashMap<Class<? extends Annotation>, AnnotationInclusion>();
-            } else {
-                AnnotationInclusion incl = _methodInclusions.get(annType);
-                if (incl != null) {
-                    return incl;
-                }
-            }
-            AnnotationInclusion incl = _annotationConfig.getInclusionForMethod(annType);
-            _methodInclusions.put(annType, incl);
-            return incl;
+            return methodInclusions.includeProductAnnotation(ann, this._annotationConfig);
         }
 
         public boolean includeParameterAnnotation(Annotation ann)
         {
-            return parameterInclusion(ann) != AnnotationInclusion.DONT_INCLUDE;
+        	return parameterInclusion.includeProductAnnotation(ann, this._annotationConfig);
         }
+        
+        public AnnotationInclusion methodInclusion(Annotation ann)
+        {
+            return methodInclusions.productInclusion(ann, this._annotationConfig);
+        }
+
 
         public AnnotationInclusion parameterInclusion(Annotation ann)
         {
-            Class<? extends Annotation> annType = ann.annotationType();
-            if (_parameterInclusions == null) {
-                _parameterInclusions = new HashMap<Class<? extends Annotation>, AnnotationInclusion>();
-            } else {
-                AnnotationInclusion incl = _parameterInclusions.get(annType);
-                if (incl != null) {
-                    return incl;
-                }
-            }
-            AnnotationInclusion incl = _annotationConfig.getInclusionForParameter(annType);
-            _parameterInclusions.put(annType, incl);
-            return incl;
+        	return parameterInclusion.productInclusion(ann, this._annotationConfig);
         }
     }
 }
