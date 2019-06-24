@@ -23,7 +23,9 @@ import com.fasterxml.classmate.util.MethodKey;
  */
 public class ResolvedTypeWithMembers
 {
-    private final static ResolvedType[] NO_RESOLVED_TYPES = new ResolvedType[0];
+    private HierarchicResolver hierarchicResolver;
+
+	private final static ResolvedType[] NO_RESOLVED_TYPES = new ResolvedType[0];
 
     private final static ResolvedMethod[] NO_RESOLVED_METHODS = new ResolvedMethod[0];
     private final static ResolvedField[] NO_RESOLVED_FIELDS = new ResolvedField[0];
@@ -44,18 +46,6 @@ public class ResolvedTypeWithMembers
      * Handler for resolving annotation information
      */
     protected final AnnotationHandler _annotationHandler;
-
-    /**
-     * Leaf of the type hierarchy, i.e. type from which this hierarchy
-     * was generated.
-     */
-    protected final HierarchicType _mainType;
-
-    /**
-     * All types that hierarchy contains, in order of increasing precedence
-     * (that is, later entries override members of earlier members)
-     */
-    protected final HierarchicType[] _types;
 
     /**
      * Filter to use for selecting fields to include
@@ -98,9 +88,8 @@ public class ResolvedTypeWithMembers
             HierarchicType mainType, HierarchicType[] types,
             Filter<RawConstructor> constructorFilter, Filter<RawField> fieldFilter, Filter<RawMethod> methodFilter)
     {
-        _typeResolver = typeResolver;
-        _mainType = mainType;
-        _types = types;
+        this.hierarchicResolver = new HierarchicResolver(mainType, types);
+		_typeResolver = typeResolver;
         if (annotationConfig == null) {
             annotationConfig = DEFAULT_ANNOTATION_CONFIG;
         }
@@ -116,14 +105,14 @@ public class ResolvedTypeWithMembers
     /**********************************************************************
      */
     
-    public int size() { return _types.length; }
+    public int size() { return hierarchicResolver.size(); }
 
     /**
      * Accessor for getting full type hierarchy as priority-ordered list, from
      * the lowest precedence to highest precedence (main type, its mix-in overrides)
      */
     public List<HierarchicType> allTypesAndOverrides() {
-        return Arrays.asList(_types);
+        return hierarchicResolver.allTypesAndOverrides();
     }
 
     /**
@@ -132,12 +121,7 @@ public class ResolvedTypeWithMembers
      */
     public List<HierarchicType> mainTypeAndOverrides()
     {
-        List<HierarchicType> l = Arrays.asList(_types);
-        int end = _mainType.getPriority() + 1;
-        if (end < l.size()) {
-            l = l.subList(0, end);
-        }
-        return l;
+        return hierarchicResolver.mainTypeAndOverrides();
     }
 
     /**
@@ -145,12 +129,7 @@ public class ResolvedTypeWithMembers
      */
     public List<HierarchicType> overridesOnly()
     {
-        int index = _mainType.getPriority();
-        if (index == 0) {
-            return Collections.emptyList();
-        }
-        List<HierarchicType> l = Arrays.asList(_types);
-        return l.subList(0, index);
+        return hierarchicResolver.overridesOnly();
     }
     
     /*
@@ -225,14 +204,14 @@ public class ResolvedTypeWithMembers
     {
         // First get static methods for main type, filter
         LinkedHashMap<MethodKey, ResolvedConstructor> constructors = new LinkedHashMap<MethodKey, ResolvedConstructor>();
-        for (RawConstructor constructor : _mainType.getType().getConstructors()) {
+        for (RawConstructor constructor : hierarchicResolver.get_mainType().getType().getConstructors()) {
             // no filter for constructors (yet?)
             if (_constructorFilter == null || _constructorFilter.include(constructor)) {
                 constructors.put(constructor.createKey(), resolveConstructor(constructor));
             }
         }
         // then apply overrides (mix-ins):
-        for (HierarchicType type : overridesOnly()) {
+        for (HierarchicType type : hierarchicResolver.overridesOnly()) {
             for (RawConstructor raw : type.getType().getConstructors()) {
                 ResolvedConstructor constructor = constructors.get(raw.createKey()); 
                 // must override something, otherwise to ignore
@@ -275,8 +254,8 @@ public class ResolvedTypeWithMembers
          * as overrides, never as defaults. And sub-classes fully mask fields. This makes
          * handling bit simpler than that of member methods.
          */
-        for (int typeIndex = _types.length; --typeIndex >= 0; ) {
-            HierarchicType thisType = _types[typeIndex];
+        for (int typeIndex = hierarchicResolver.get_types().length; --typeIndex >= 0; ) {
+            HierarchicType thisType = hierarchicResolver.get_types()[typeIndex];
             // If it's just a mix-in, add annotations as overrides
             if (thisType.isMixin()) {
                 for (RawField raw : thisType.getType().getMemberFields()) {
@@ -318,7 +297,7 @@ public class ResolvedTypeWithMembers
          * alongside (for overrides), as well as "merged down" for inheritable
          * annotations.
          */
-        for (HierarchicType type : allTypesAndOverrides()) {
+        for (HierarchicType type : hierarchicResolver.allTypesAndOverrides()) {
             for (RawMethod method : type.getType().getMemberMethods()) {
                 // First: ignore methods caller is not interested
                 if (_methodFilter != null && !_methodFilter.include(method)) {
@@ -437,13 +416,13 @@ public class ResolvedTypeWithMembers
     {
         // First get static methods for main type, filter
         LinkedHashMap<String, ResolvedField> fields = new LinkedHashMap<String, ResolvedField>();
-        for (RawField field : _mainType.getType().getStaticFields()) {
+        for (RawField field : hierarchicResolver.get_mainType().getType().getStaticFields()) {
             if (_fieldFilter == null || _fieldFilter.include(field)) {
                 fields.put(field.getName(), resolveField(field));
             }
         }
         // then apply overrides (mix-ins):
-        for (HierarchicType type : overridesOnly()) {
+        for (HierarchicType type : hierarchicResolver.overridesOnly()) {
             for (RawField raw : type.getType().getStaticFields()) {
                 ResolvedField field = fields.get(raw.getName()); 
                 // must override something, otherwise to ignore
@@ -471,13 +450,13 @@ public class ResolvedTypeWithMembers
     {
         // First get static methods for main type, filter
         LinkedHashMap<MethodKey, ResolvedMethod> methods = new LinkedHashMap<MethodKey, ResolvedMethod>();
-        for (RawMethod method : _mainType.getType().getStaticMethods()) {
+        for (RawMethod method : hierarchicResolver.get_mainType().getType().getStaticMethods()) {
             if (_methodFilter == null || _methodFilter.include(method)) {
                 methods.put(method.createKey(), resolveMethod(method));
             }
         }
         // then apply overrides (mix-ins):
-        for (HierarchicType type : overridesOnly()) {
+        for (HierarchicType type : hierarchicResolver.overridesOnly()) {
             for (RawMethod raw : type.getType().getStaticMethods()) {
                 ResolvedMethod method = methods.get(raw.createKey()); 
                 // must override something, otherwise to ignore
