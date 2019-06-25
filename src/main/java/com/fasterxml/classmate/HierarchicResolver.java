@@ -7,12 +7,11 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class HierarchicResolver {
+	private HierarchicResolverProduct _hierarchicResolverProduct;
 	private final HierarchicType _mainType;
-	private final HierarchicType[] _types;
-
 	public HierarchicResolver(HierarchicType mainType, HierarchicType[] types) {
+		_hierarchicResolverProduct = new HierarchicResolverProduct(types);
 		_mainType = mainType;
-		_types = types;
 	}
 
 	public HierarchicType get_mainType() {
@@ -20,14 +19,14 @@ public class HierarchicResolver {
 	}
 
 	public HierarchicType[] get_types() {
-		return _types;
+		return _hierarchicResolverProduct.get_types();
 	}
 
 	/**
 	* Accessor for getting subset of type hierarchy which only contains main type and possible overrides (mix-ins) it has, but not supertypes or their overrides.
 	*/
 	public List<HierarchicType> mainTypeAndOverrides() {
-		List<HierarchicType> l = Arrays.asList(_types);
+		List<HierarchicType> l = _hierarchicResolverProduct.allTypesAndOverrides();
 		int end = _mainType.getPriority() + 1;
 		if (end < l.size()) {
 			l = l.subList(0, end);
@@ -43,18 +42,18 @@ public class HierarchicResolver {
 		if (index == 0) {
 			return Collections.emptyList();
 		}
-		List<HierarchicType> l = Arrays.asList(_types);
+		List<HierarchicType> l = _hierarchicResolverProduct.allTypesAndOverrides();
 		return l.subList(0, index);
 	}
 
 	public int size() {
-		return _types.length;
+		return _hierarchicResolverProduct.size();
 	}
 
 	/**
 	* Accessor for getting full type hierarchy as priority-ordered list, from the lowest precedence to highest precedence (main type, its mix-in overrides)
 	*/
 	public List<HierarchicType> allTypesAndOverrides() {
-		return Arrays.asList(_types);
+		return _hierarchicResolverProduct.allTypesAndOverrides();
 	}
 }
