@@ -9,16 +9,13 @@ import java.util.*;
  */
 public final class TypeBindings
 {
+	private TypeBindingsProduct _typeBindingsProduct;
+	
     private final static String[] NO_STRINGS = new String[0];
 
     private final static ResolvedType[] NO_TYPES = new ResolvedType[0];
 
     private final static TypeBindings EMPTY = new TypeBindings(NO_STRINGS, NO_TYPES, null);
-
-    /**
-     * Array of type (type variable) names.
-     */
-    private final String[] _names;
 
     /**
      * Types matching names
@@ -42,10 +39,10 @@ public final class TypeBindings
     
     private TypeBindings(String[] names, ResolvedType[] types, String[] uvars)
     {
-        _names = (names == null) ? NO_STRINGS : names;
+    	_typeBindingsProduct = new TypeBindingsProduct(names);
         _types = (types == null) ? NO_TYPES : types;
-        if (_names.length != _types.length) {
-            throw new IllegalArgumentException("Mismatching names ("+_names.length+"), types ("+_types.length+")");
+        if (_typeBindingsProduct.length() != _types.length) {
+            throw new IllegalArgumentException("Mismatching names ("+_typeBindingsProduct.length()+"), types ("+_types.length+")");
         }
         int h = 1;
         for (int i = 0, len = _types.length; i < len; ++i) {
@@ -108,7 +105,7 @@ public final class TypeBindings
         String[] names =  (len == 0)
                 ? new String[1] : Arrays.copyOf(_unboundVariables, len+1);
         names[len] = name;
-        return new TypeBindings(_names, _types, names);
+        return new TypeBindings(_typeBindingsProduct.get_names(), _types, names);
     }
 
     /*
@@ -122,12 +119,7 @@ public final class TypeBindings
      */
     public ResolvedType findBoundType(String name)
     {
-        for (int i = 0, len = _names.length; i < len; ++i) {
-            if (name.equals(_names[i])) {
-                return _types[i];
-            }
-        }
-        return null;
+        return _typeBindingsProduct.findBoundType(name, _types);
     }
 
     public boolean isEmpty() {
@@ -143,10 +135,7 @@ public final class TypeBindings
 
     public String getBoundName(int index)
     {
-        if (index < 0 || index >= _names.length) {
-            return null;
-        }
-        return _names[index];
+        return _typeBindingsProduct.getBoundName(index);
     }
 
     public ResolvedType getBoundType(int index)
