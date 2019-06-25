@@ -11,10 +11,9 @@ import com.fasterxml.classmate.types.ResolvedRecursiveType;
  */
 public final class ClassStack
 {
-    protected final ClassStack _parent;
+    private ClassStackHelper classStackHelper = new ClassStackHelper();
+	protected final ClassStack _parent;
     protected final Class<?> _current;
-
-    private ArrayList<ResolvedRecursiveType> _selfRefs;
 
     public ClassStack(Class<?> rootType) {
         this(null, rootType);
@@ -39,10 +38,7 @@ public final class ClassStack
      */
     public void addSelfReference(ResolvedRecursiveType ref)
     {
-        if (_selfRefs == null) {
-            _selfRefs = new ArrayList<ResolvedRecursiveType>();
-        }
-        _selfRefs.add(ref);
+        classStackHelper.addSelfReference(ref);
     }
 
     /**
@@ -52,11 +48,7 @@ public final class ClassStack
      */
     public void resolveSelfReferences(ResolvedType resolved)
     {
-        if (_selfRefs != null) {
-            for (ResolvedRecursiveType ref : _selfRefs) {
-                ref.setReference(resolved);
-            }
-        }
+        classStackHelper.resolveSelfReferences(resolved);
     }
 
     public ClassStack find(Class<?> cls)
