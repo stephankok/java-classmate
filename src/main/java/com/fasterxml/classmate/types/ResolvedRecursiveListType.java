@@ -1,11 +1,11 @@
-package com.fasterxml.classmate.util;
+package com.fasterxml.classmate.types;
 
 
 import java.util.ArrayList;
-import com.fasterxml.classmate.types.ResolvedRecursiveType;
+
 import com.fasterxml.classmate.ResolvedType;
 
-public class ClassStackHelper {
+public class ResolvedRecursiveListType {
 	private ArrayList<ResolvedRecursiveType> _selfRefs;
 
 	/**

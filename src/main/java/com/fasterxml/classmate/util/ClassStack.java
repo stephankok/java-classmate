@@ -1,17 +1,13 @@
 package com.fasterxml.classmate.util;
 
-import java.util.ArrayList;
-
-import com.fasterxml.classmate.ResolvedType;
-import com.fasterxml.classmate.types.ResolvedRecursiveType;
+import com.fasterxml.classmate.types.ResolvedRecursiveListType;
 
 /**
  * Simple helper class used to keep track of 'call stack' for classes being referenced
  * (as well as unbound variables)
  */
-public final class ClassStack
+public final class ClassStack extends ResolvedRecursiveListType
 {
-    private ClassStackHelper classStackHelper = new ClassStackHelper();
 	protected final ClassStack _parent;
     protected final Class<?> _current;
 
@@ -30,25 +26,6 @@ public final class ClassStack
     public ClassStack child(Class<?> cls)
     {
         return new ClassStack(this, cls);
-    }
-
-    /**
-     * Method called to indicate that there is a self-reference from
-     * deeper down in stack pointing into type this stack frame represents.
-     */
-    public void addSelfReference(ResolvedRecursiveType ref)
-    {
-        classStackHelper.addSelfReference(ref);
-    }
-
-    /**
-     * Method called when type that this stack frame represents is
-     * fully resolved, allowing self-references to be completed
-     * (if there are any)
-     */
-    public void resolveSelfReferences(ResolvedType resolved)
-    {
-        classStackHelper.resolveSelfReferences(resolved);
     }
 
     public ClassStack find(Class<?> cls)
