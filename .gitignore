@@ -1,6 +1,9 @@
 # Skip maven 'target' directory
 target
 
+# Skip CodeMR
+codemr
+
 # plus eclipse artifacts
 .classpath
 .project
