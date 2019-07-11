@@ -172,19 +172,10 @@ public class MemberResolver implements Serializable
                 htypes, _constructorFilter, _fieldFilter, _methodFilter);
     }
 
-    private void _addOverrides(List<HierarchicType> typesWithOverrides, Set<ClassKey> seenTypes, Class<?> override)
+    private void _addOverrides(List<HierarchicType> typesWithOverrides, Set<ClassKey> seenTypes, Class<?> raw)
     {
-        ClassKey key = new ClassKey(override);
-        if (!seenTypes.contains(key)) {
-            seenTypes.add(key);
-            ResolvedType resolvedOverride = _typeResolver.resolve(override);
-            typesWithOverrides.add(new HierarchicType(resolvedOverride, true, typesWithOverrides.size()));
-            for (ResolvedType r : resolvedOverride.getImplementedInterfaces()) { // interfaces?
-                _addOverrides(typesWithOverrides, seenTypes, r);
-            }
-            ResolvedType superClass = resolvedOverride.getParentClass();
-            _addOverrides(typesWithOverrides, seenTypes, superClass);
-        }
+    	ResolvedType override = _typeResolver.resolve(raw);
+    	_addOverridesGeneral(typesWithOverrides, seenTypes, raw, override);    
     }
 
     private void _addOverrides(List<HierarchicType> typesWithOverrides, Set<ClassKey> seenTypes, ResolvedType override)
@@ -193,6 +184,12 @@ public class MemberResolver implements Serializable
         // first: may need to exclude Object.class:
         Class<?> raw = override.getErasedType();
         if (!_cfgIncludeLangObject && Object.class == raw) return;
+        
+        _addOverridesGeneral(typesWithOverrides, seenTypes, raw, override);        
+    }
+    
+    private void _addOverridesGeneral(List<HierarchicType> typesWithOverrides, Set<ClassKey> seenTypes, Class<?> raw, ResolvedType override)
+    {       
         ClassKey key = new ClassKey(raw);
         if (!seenTypes.contains(key)) {
             seenTypes.add(key);
@@ -206,6 +203,8 @@ public class MemberResolver implements Serializable
             }
         }
     }
+    
+    
     
     /*
     /**********************************************************************
