@@ -270,18 +270,7 @@ public class ResolvedObjectType extends ResolvedType
             sb.append(" extends ");
             sb = _superClass.appendBriefDescription(sb);
         }
-        // interfaces 'extend' other interfaces...
-        int count = _superInterfaces.length;
-        if (count > 0) {
-            sb.append(" implements ");
-            for (int i = 0; i < count; ++i) {
-                if (i > 0) {
-                    sb.append(",");
-                }
-                sb = _superInterfaces[i].appendBriefDescription(sb);
-            }
-        }
-        return sb;
+        return extendOtherInterfaces(sb, " implements ",_superInterfaces);
     }
 }
 

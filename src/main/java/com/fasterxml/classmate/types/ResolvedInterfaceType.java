@@ -142,18 +142,7 @@ public class ResolvedInterfaceType extends ResolvedType
     public StringBuilder appendFullDescription(StringBuilder sb)
     {
         sb = _appendClassDescription(sb);
-        // interfaces 'extend' other interfaces...
-        int count = _superInterfaces.length;
-        if (count > 0) {
-            sb.append(" extends ");
-            for (int i = 0; i < count; ++i) {
-                if (i > 0) {
-                    sb.append(",");
-                }
-                sb = _superInterfaces[i].appendBriefDescription(sb);
-            }
-        }
-        return sb;
+        return extendOtherInterfaces(sb, " extends ",_superInterfaces);
     }
 }
 

@@ -399,4 +399,20 @@ public abstract class ResolvedType
         }
         return ctors.toArray(new RawConstructor[ctors.size()]);
     }
+    
+    protected StringBuilder extendOtherInterfaces(StringBuilder sb, String type,
+    		ResolvedType[] superInterface) {
+        // interfaces 'extend' other interfaces...
+        int count = superInterface.length;
+        if (count > 0) {
+            sb.append(type);
+            for (int i = 0; i < count; ++i) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb = superInterface[i].appendBriefDescription(sb);
+            }
+        }
+        return sb;
+    }
 }
