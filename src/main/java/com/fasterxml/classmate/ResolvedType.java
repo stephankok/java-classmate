@@ -283,20 +283,40 @@ public abstract class ResolvedType
     /* Helper methods for sub-classes; string construction
     /**********************************************************************
      */
+    protected StringBuilder _appendClassDescription(StringBuilder sb)
+    {
+    	sb.append(_erasedType.getName());
+    	sb = appendBoundType(sb, true);
+    	return sb;
+    }
     
     protected StringBuilder _appendClassSignature(StringBuilder sb)
     {
-        sb.append('L');
+    	sb.append('L');
         sb = _appendClassName(sb);
+        sb = appendBoundType(sb, false);
+        sb.append(';');
+        return sb;
+    }
+    
+    private StringBuilder appendBoundType(StringBuilder sb,
+    		boolean description) {
         int count = _typeBindings.size();
         if (count > 0) {
             sb.append('<');
             for (int i = 0; i < count; ++i) {
-                sb = _typeBindings.getBoundType(i).appendErasedSignature(sb);
+            	if (description) {            		
+            	      if (i > 0) {
+                          sb.append(',');
+                      }
+                      sb = _typeBindings.getBoundType(i).appendBriefDescription(sb);                            
+            	}
+            	else {            		
+            		sb = _typeBindings.getBoundType(i).appendErasedSignature(sb);
+            	}
             }
             sb.append('>');
-        }
-        sb.append(';');
+        }        
         return sb;
     }
 
@@ -305,23 +325,6 @@ public abstract class ResolvedType
         sb.append('L');
         sb = _appendClassName(sb);
         sb.append(';');
-        return sb;
-    }
-
-    protected StringBuilder _appendClassDescription(StringBuilder sb)
-    {
-        sb.append(_erasedType.getName());
-        int count = _typeBindings.size();
-        if (count > 0) {
-            sb.append('<');
-            for (int i = 0; i < count; ++i) {
-                if (i > 0) {
-                    sb.append(',');
-                }
-                sb = _typeBindings.getBoundType(i).appendBriefDescription(sb);
-            }
-            sb.append('>');
-        }
         return sb;
     }
     
