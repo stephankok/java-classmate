@@ -501,17 +501,10 @@ public class ResolvedTypeWithMembers
     /* Helper methods
     /**********************************************************************
      */
-
-    /**
-     * Method for resolving individual constructor completely
-     */
-    protected ResolvedConstructor resolveConstructor(RawConstructor raw)
+    
+    private ResolvedType[] resolveRawTypes (RawMember raw, Type[] rawTypes, TypeBindings bindings)
     {
-        final ResolvedType context = raw.getDeclaringType();
-        final TypeBindings bindings = context.getTypeBindings();
-        Constructor<?> ctor = raw.getRawMember();
-        Type[] rawTypes = ctor.getGenericParameterTypes();
-        ResolvedType[] argTypes;
+    	ResolvedType[] argTypes;
         if (rawTypes == null || rawTypes.length == 0) {
             argTypes = NO_RESOLVED_TYPES;
         } else {
@@ -519,24 +512,51 @@ public class ResolvedTypeWithMembers
             for (int i = 0, len = rawTypes.length; i < len; ++i) {
                 argTypes[i] = _typeResolver.resolve(bindings, rawTypes[i]);
             }
-        }
-        // And then annotations
+        }           
+        return argTypes;
+    }
+    
+    private void resolveParametersAnnotations(Annotation[][] annotations, ResolvedType[] argTypes, ResolvedParameterizedMember<?> member)
+    {    	
+        for (int i = 0; i < argTypes.length; i++) {
+            for (Annotation ann : annotations[i]) {
+            	member.applyParamOverride(i, ann);
+            }
+        }    	
+    }
+    
+    private Annotations resolveAnnotations(RawMember member, 
+    		HashMap<Class<? extends Annotation>, AnnotationInclusion> inclusion)
+    {
+    	// And then annotations
         Annotations anns = new Annotations();
-        for (Annotation ann : ctor.getAnnotations()) {
-            if (_annotationHandler.includeConstructorAnnotation(ann)) {
+        for (Annotation ann : member.getAnnotations()) {
+            if (_annotationHandler.includeAnnotation(ann, inclusion)) {
                 anns.add(ann);
             }
         }
+        return anns;
+    }
+    
 
+    /**
+     * Method for resolving individual constructor completely
+     */
+    protected ResolvedConstructor resolveConstructor(RawConstructor raw)
+    {
+    	final ResolvedType context = raw.getDeclaringType();
+        final TypeBindings bindings = context.getTypeBindings(); 
+        Constructor<?> ctor = raw.getRawMember();
+        Type[] rawTypes = ctor.getGenericParameterTypes();
+        
+        ResolvedType[] argTypes = resolveRawTypes(raw, rawTypes, bindings);
+        
+        // And then annotations
+        Annotations anns = resolveAnnotations(raw, _annotationHandler._constructorInclusions);
+      
         ResolvedConstructor constructor = new ResolvedConstructor(context, anns, ctor, argTypes);
 
-        // and parameter annotations
-        Annotation[][] annotations = ctor.getParameterAnnotations();
-        for (int i = 0; i < argTypes.length; i++) {
-            for (Annotation ann : annotations[i]) {
-                constructor.applyParamOverride(i, ann);
-            }
-        }
+        resolveParametersAnnotations(ctor.getParameterAnnotations(), argTypes, constructor);        
 
         return constructor;
     }
@@ -568,34 +588,16 @@ public class ResolvedTypeWithMembers
         final TypeBindings bindings = context.getTypeBindings();
         Method m = raw.getRawMember();
         Type rawType = m.getGenericReturnType();
-        ResolvedType rt = (rawType == Void.TYPE) ? null : _typeResolver.resolve(bindings, rawType);
         Type[] rawTypes = m.getGenericParameterTypes();
-        ResolvedType[] argTypes;
-        if (rawTypes == null || rawTypes.length == 0) {
-            argTypes = NO_RESOLVED_TYPES;
-        } else {
-            argTypes = new ResolvedType[rawTypes.length];
-            for (int i = 0, len = rawTypes.length; i < len; ++i) {
-                argTypes[i] = _typeResolver.resolve(bindings, rawTypes[i]);
-            }
-        }
-        // And then annotations
-        Annotations anns = new Annotations();
-        for (Annotation ann : m.getAnnotations()) {
-            if (_annotationHandler.includeMethodAnnotation(ann)) {
-                anns.add(ann);
-            }
-        }
+        
+        ResolvedType[] argTypes = resolveRawTypes(raw, rawTypes, bindings);
+        
+        Annotations anns = resolveAnnotations(raw, _annotationHandler._methodInclusions);
 
+        ResolvedType rt = (rawType == Void.TYPE) ? null : _typeResolver.resolve(bindings, rawType);
         ResolvedMethod method = new ResolvedMethod(context, anns, m, rt, argTypes);
 
-        // and argument annotations
-        Annotation[][] annotations = m.getParameterAnnotations();
-        for (int i = 0; i < argTypes.length; i++) {
-            for (Annotation ann : annotations[i]) {
-                method.applyParamOverride(i, ann);
-            }
-        }
+        resolveParametersAnnotations(m.getParameterAnnotations(), argTypes, method);       
         return method;
     }
 
@@ -629,16 +631,23 @@ public class ResolvedTypeWithMembers
     {
         private final AnnotationConfiguration _annotationConfig;
 
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _fieldInclusions;
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _constructorInclusions;
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _methodInclusions;
-        private HashMap<Class<? extends Annotation>, AnnotationInclusion> _parameterInclusions;
+        public HashMap<Class<? extends Annotation>, AnnotationInclusion> _fieldInclusions;
+        public HashMap<Class<? extends Annotation>, AnnotationInclusion> _constructorInclusions;
+        public HashMap<Class<? extends Annotation>, AnnotationInclusion> _methodInclusions;
+        public HashMap<Class<? extends Annotation>, AnnotationInclusion> _parameterInclusions;
 
         public AnnotationHandler(AnnotationConfiguration annotationConfig) {
             _annotationConfig = annotationConfig;
         }
         
-        private AnnotationInclusion generalIncludeAnnotation(Annotation ann, HashMap<Class<? extends Annotation>, AnnotationInclusion> inclusion) {
+        public boolean includeAnnotation(Annotation ann,  
+        		HashMap<Class<? extends Annotation>, AnnotationInclusion> inclusion)
+        {
+        	return (generalIncludeAnnotation(ann, inclusion) != AnnotationInclusion.DONT_INCLUDE);
+        }
+        
+        private AnnotationInclusion generalIncludeAnnotation(Annotation ann, 
+        		HashMap<Class<? extends Annotation>, AnnotationInclusion> inclusion) {
         	Class<? extends Annotation> annType = ann.annotationType();
             if (inclusion == null) {
             	inclusion = new HashMap<Class<? extends Annotation>, AnnotationInclusion>();
