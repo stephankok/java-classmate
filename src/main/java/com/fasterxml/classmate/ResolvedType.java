@@ -2,6 +2,7 @@ package com.fasterxml.classmate;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -345,6 +346,11 @@ public abstract class ResolvedType
     /**********************************************************************
      */
     
+    private boolean isStaticMember(Member m, boolean statics)
+    {
+    	return Modifier.isStatic(m.getModifiers()) == statics;
+    }
+    
     /**
      * @param statics Whether to return static methods (true) or member methods (false)
      */
@@ -354,7 +360,7 @@ public abstract class ResolvedType
         for (Field f : _erasedType.getDeclaredFields()) {
             // Only skip synthetic fields, which should not really be exposed
             if (!f.isSynthetic()) {
-                if (Modifier.isStatic(f.getModifiers()) == statics) {
+                if (isStaticMember(f, statics)) {
                     fields.add(new RawField(this, f));
                 }
             }
@@ -374,7 +380,7 @@ public abstract class ResolvedType
         for (Method m : _erasedType.getDeclaredMethods()) {
             // Only skip synthetic fields, which should not really be exposed
             if (!m.isSynthetic()) {
-                if (Modifier.isStatic(m.getModifiers()) == statics) {
+                if (isStaticMember(m, statics)) {
                     methods.add(new RawMethod(this, m));
                 }
             }

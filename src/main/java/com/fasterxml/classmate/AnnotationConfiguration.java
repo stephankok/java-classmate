@@ -57,6 +57,8 @@ public abstract class AnnotationConfiguration implements Serializable
      */
     public abstract AnnotationInclusion getInclusionForParameter(Class<? extends Annotation> annotationType);
     
+    public abstract AnnotationInclusion getInclusionForMember(Class<? extends Annotation> annotationType);
+    
     /**
      * Simple implementation that can be configured with default behavior
      * for unknown annotations, as well as explicit behaviors for
@@ -111,5 +113,10 @@ public abstract class AnnotationConfiguration implements Serializable
             AnnotationInclusion beh = _inclusions.get(key);
             return (beh == null) ? _defaultInclusion : beh;
         }
+
+		@Override
+		public AnnotationInclusion getInclusionForMember(Class<? extends Annotation> annotationType) {
+			return getInclusionForClass(annotationType);
+		}
     }
 }

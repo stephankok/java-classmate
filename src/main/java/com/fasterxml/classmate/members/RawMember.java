@@ -6,6 +6,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 
 import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.util.MethodKey;
 
 /**
  * Base class for all "raw" member (field, method, constructor) types; raw means that
@@ -83,6 +84,8 @@ public abstract class RawMember
     @Override public abstract boolean equals(Object o);
 
     @Override public abstract int hashCode();
+    
+    public abstract MethodKey createKey();
 
     @Override public String toString() {
         return getName();

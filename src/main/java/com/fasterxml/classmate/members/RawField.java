@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.util.MethodKey;
 
 public final class RawField extends RawMember
 {
@@ -35,6 +36,12 @@ public final class RawField extends RawMember
 
     public boolean isVolatile() {
         return Modifier.isVolatile(getModifiers());
+    }
+    
+    public MethodKey createKey()
+    {
+        String name = _field.getName();        
+        return new MethodKey(name);
     }
 
     /*

@@ -231,19 +231,18 @@ public class ResolvedTypeWithMembers
                 constructors.put(constructor.createKey(), resolveConstructor(constructor));
             }
         }
-        // then apply overrides (mix-ins):
+        // then apply parameter annotations
         for (HierarchicType type : overridesOnly()) {
             for (RawConstructor raw : type.getType().getConstructors()) {
                 ResolvedConstructor constructor = constructors.get(raw.createKey()); 
                 // must override something, otherwise to ignore
                 if (constructor != null) {
                     for (Annotation ann : raw.getAnnotations()) {
-                        if (_annotationHandler.includeMethodAnnotation(ann)) {
-                            constructor.applyOverride(ann);
+                        if (_annotationHandler.includeConstructorAnnotation(ann)) {
+                        	constructor.applyOverride(ann);
                         }
-                    }
-
-                    // and parameter annotations
+                    }  
+                    
                     Annotation[][] params = raw.getRawMember().getParameterAnnotations();
                     for (int i = 0; i < params.length; i++) {
                         for (Annotation annotation : params[i]) {
@@ -436,64 +435,61 @@ public class ResolvedTypeWithMembers
     protected ResolvedField[] resolveStaticFields()
     {
         // First get static methods for main type, filter
-        LinkedHashMap<String, ResolvedField> fields = new LinkedHashMap<String, ResolvedField>();
+        LinkedHashMap<MethodKey, ResolvedField> fields = new LinkedHashMap<MethodKey, ResolvedField>();
         for (RawField field : _mainType.getType().getStaticFields()) {
             if (_fieldFilter == null || _fieldFilter.include(field)) {
-                fields.put(field.getName(), resolveField(field));
+                fields.put(field.createKey(), resolveField(field));
             }
         }
-        // then apply overrides (mix-ins):
-        for (HierarchicType type : overridesOnly()) {
-            for (RawField raw : type.getType().getStaticFields()) {
-                ResolvedField field = fields.get(raw.getName()); 
-                // must override something, otherwise to ignore
-                if (field != null) {
-                    for (Annotation ann : raw.getAnnotations()) {
-                        if (_annotationHandler.includeFieldAnnotation(ann)) {
-                            field.applyOverride(ann);
-                        }
-                    }
-                }
-            }
-        }
+        applyOverridesMixins(fields, _annotationHandler._fieldInclusions);
+
         // and that's it?
         if (fields.isEmpty()) {
             return NO_RESOLVED_FIELDS;
         }
         return fields.values().toArray(new ResolvedField[ fields.size()]);
-    }
+    }   
 
     /**
      * Method that will actually resolve full information (types, annotations)
      * for static methods, using configured filter.
      */
     protected ResolvedMethod[] resolveStaticMethods()
-    {
-        // First get static methods for main type, filter
+    {        // First get static methods for main type, filter
         LinkedHashMap<MethodKey, ResolvedMethod> methods = new LinkedHashMap<MethodKey, ResolvedMethod>();
         for (RawMethod method : _mainType.getType().getStaticMethods()) {
             if (_methodFilter == null || _methodFilter.include(method)) {
                 methods.put(method.createKey(), resolveMethod(method));
             }
         }
-        // then apply overrides (mix-ins):
-        for (HierarchicType type : overridesOnly()) {
-            for (RawMethod raw : type.getType().getStaticMethods()) {
-                ResolvedMethod method = methods.get(raw.createKey()); 
-                // must override something, otherwise to ignore
-                if (method != null) {
-                    for (Annotation ann : raw.getAnnotations()) {
-                        if (_annotationHandler.includeMethodAnnotation(ann)) {
-                            method.applyOverride(ann);
-                        }
-                    }
-                }
-            }
-        }
+        applyOverridesMixins(methods, _annotationHandler._methodInclusions);
+
         if (methods.size() == 0) {
             return NO_RESOLVED_METHODS;
         }
         return methods.values().toArray(new ResolvedMethod[methods.size()]);
+    }
+    
+    /**
+     * apply overrides (mix-ins):
+     */
+    private <T extends ResolvedMember<?>>
+    void applyOverridesMixins(LinkedHashMap<MethodKey, T> members,
+    		HashMap<Class<? extends Annotation>, AnnotationInclusion> memberInclusion)
+    {
+        for (HierarchicType type : overridesOnly()) {
+            for (RawMethod raw : type.getType().getStaticMethods()) {
+                ResolvedMember<?> member = members.get(raw.createKey()); 
+                // must override something, otherwise to ignore
+                if (member != null) {
+                    for (Annotation ann : raw.getAnnotations()) {
+                        if (_annotationHandler.includeAnnotation(ann, memberInclusion)) {
+                        	member.applyOverride(ann);
+                        }
+                    }                   
+                }
+            }
+        }
     }
 
     /*
@@ -564,7 +560,7 @@ public class ResolvedTypeWithMembers
     /**
      * Method for resolving individual field completely
      */
-    protected ResolvedField resolveField(RawField raw)
+    public ResolvedField resolveField(RawField raw)
     {
         final ResolvedType context = raw.getDeclaringType();
         Field field = raw.getRawMember();
@@ -657,7 +653,7 @@ public class ResolvedTypeWithMembers
                     return incl;
                 }
             }
-            AnnotationInclusion incl = _annotationConfig.getInclusionForConstructor(annType);
+            AnnotationInclusion incl = _annotationConfig.getInclusionForMember(annType);
             inclusion.put(annType, incl);
             return incl; 
         }
